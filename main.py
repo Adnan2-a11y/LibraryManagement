@@ -1,51 +1,108 @@
 import pandas as pd
+import os
+from datetime import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-data=pd.read_csv('Engineering_Books.csv')
+print("📚---Welcome to AMUST Library---📚")
+data = pd.read_csv("Engineering_Books.csv")
+data['borrow_books'] = False
+
 class LibraryManager:
-    def __init__(self,data):
+    def __init__(self, data):
         self.data = data
-    
-    def view_books(self,top_n=5):
-        #if self.data.empty:
-        #    print("No books available in the library.")
-        #
-        #else:
-        #    
-        #    for book in self.data.itertuples(index=False):
-        #        print(f"Book Name   : {book[0]}")
-        #        print(f"Author      : {book[1]}")
-        #        print(f"Department  : {book[2]}")
-        #        print("-" * 30)
-        self.data.dropna(subset=['Book','Author','Dept Name'],inplace=True)
-        self.data['Combined_text']=self.data['Book'] + ' ' + self.data['Author']
-        self.vectorizer=TfidfVectorizer()
-        self.book_vector=self.vectorizer.fit_transform(self.data['Combined_text'])
-        
-        search_query=input("")
-        query=self.vectorizer.transform([department_name])
-        similarity=cosine_similarity(query,self.book_vector).flatten()
-        topic_indices=similarity.argsort[-top_n:][::-1]
-        top_books=self.data.iloc[topic_indices]
 
-        for book in top_books.itertuples(index=False):
-            print(f"Book Name   : {book[0]}")
+    def view_book(self):
+        print("\n📚 BOOKSHELF 📚")
+        styled_books = (self.data[['Book', 'Author']]
+                       .style
+                       .set_properties(**{'text-align': 'left'})
+                       .set_table_styles([{
+                           'selector': 'th',
+                           'props': [('background-color', '#f0f0f1'),
+                                    ('color', 'black'),
+                                    ('font-weight', 'bold')]
+                       }]))
+        #display(styled_books)
+        return self
 
-Manager=LibraryManager(data)
-print("Welcome to the Library Manager!")
-while True:
-    print("\nMenu:")
-    print("1. View all books")
-    print("2. Exit")
-    
-    choice = input("Enter your choice: ")
-    
-    if choice == '1':
-        department_name=input("Enter your department name:")
-        Manager.view_books(department_name)
-    elif choice == '2':
-        print("Exiting the Library Manager. Goodbye!")
-        break
-    else:
-        print("Invalid choice, please try again.")
+    def search_books(self):
+        print("\n🎯 Write down the book name 🎯:")
+
+        vectorizer = TfidfVectorizer()
+        tfidf_metrix = vectorizer.fit_transform(self.data['Book'])
+
+        search_query = input()
+        search_query_vector = vectorizer.transform([search_query])
+
+        similarity = cosine_similarity(search_query_vector, tfidf_metrix)
+        similar_books = list(enumerate(similarity[0]))
+        sorted_books = sorted(similar_books, key=lambda x: x[1], reverse=True)
+
+        top_books = []
+        print("\nTop matching books:")
+        for idx, score in sorted_books[:5]:
+            if score > 0:
+                top_books.append((idx, self.data.iloc[idx]['Book']))
+            print(f"{self.data.iloc[idx]['Book']} (Score: {score:.2f})")
+
+        self.Borrow_books(top_books)
+
+    def Borrow_books(self, top_books):
+        book_names=[title for idx,title in top_books]
+        user_search=input("Enter your name:")
+
+        if user_search in book_names:
+           user_name=input("Enter your name:")
+           borrow_file='borrow_books.csv'
+
+           if not os.path.exist(borrow_file)
+              with open(borrow_file,'w') as file:
+                  file.write("🎯Book,Author,Student_name,date,return\n🎯")
+           borrow_date=pd.read_csv(borrow_file)
+           active_borrow=borrow_date[(borrow_data['Student_name']==user_name)&(borrow_data['return']==False)]
+           
+           if len(active_borrow)>=3:
+              print("You have already borrow 3 books")
+              print("Return 1 or more books for borrow another books")
+
+           found=False
+           for idx,title in top_books:
+               if title==user_search:
+                  found=True
+                  if not self.data.at['borrow_books']
+                     self.data.at['borrow_books']==True
+                     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                     
+              
+
+if __name__ == "__main__":
+    manager = LibraryManager(data)
+
+    while True:
+        print("📚 MENU 📚")
+        print("1. View Books")
+        print("2. Search & Borrow")
+        print("3. Show Stats")
+        print("4. Exit")
+
+        choice = input("Pick an option (1-4): ")
+        if choice == '1':
+            manager.view_book()
+            print("\n")
+
+        elif choice == '2':
+            manager.search_books()
+            print("\n")
+
+        elif choice == '3':
+            print("\n📊 Borrowed Books Statistics 📊")
+            borrowed_books = data[data['borrow_books'] == True]
+            print(borrowed_books[['Book', 'Author']])
+            print("\n")
+
+        elif choice == '4':
+            print("👋 Goodbye!Thanks for visiting AMUST Library")
+            break
+        else:
+            print("❌ Invalid option. Please try again.")
